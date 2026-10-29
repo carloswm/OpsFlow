@@ -1,0 +1,20 @@
+{
+  "name": "opsflow",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22 <23"
+  },
+  "workspaces": [
+    "apps/api",
+    "apps/web"
+  ],
+  "scripts": {
+    "dev:api": "npm run dev --workspace @opsflow/api",
+    "dev:web": "npm run dev --workspace @opsflow/web",
+    "build": "npm run build --workspace @opsflow/api && npm run build --workspace @opsflow/web",
+    "test": "npm run test --workspace @opsflow/api",
+    "db:migrate": "npm run db:migrate --workspace @opsflow/api",
+    "db:migrate:dev": "npm run db:migrate:dev --workspace @opsflow/api"
+  }
+}

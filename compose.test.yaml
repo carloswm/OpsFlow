@@ -1,0 +1,38 @@
+services:
+  test-db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: opsflow
+      POSTGRES_PASSWORD: opsflow_test_only_password
+      POSTGRES_DB: opsflow_test
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 2s
+      timeout: 3s
+      retries: 10
+      start_period: 3s
+
+  test-runner:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: test
+    command:
+      - sh
+      - -ec
+      - npm run db:migrate --workspace @opsflow/api && npm run db:seed:demo --workspace @opsflow/api && npm run test --workspace @opsflow/api
+    environment:
+      DATABASE_HOST: test-db
+      DATABASE_PORT: 5432
+      DATABASE_USER: opsflow
+      DATABASE_PASSWORD: opsflow_test_only_password
+      DATABASE_NAME: opsflow_test
+      DATABASE_POOL_MAX: 5
+      DEMO_ADMIN_EMAIL: admin@opsflow.test
+      DEMO_ADMIN_PASSWORD: opsflow-test-admin-password-22
+      ENABLE_DEMO_SEED: "true"
+      COOKIE_SECURE: "false"
+      LOG_LEVEL: silent
+    depends_on:
+      test-db:
+        condition: service_healthy

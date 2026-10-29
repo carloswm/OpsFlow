@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Build and API integration tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: opsflow
+          POSTGRES_PASSWORD: opsflow_ci_test_only_password
+          POSTGRES_DB: opsflow_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U opsflow -d opsflow_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+          --health-start-period 5s
+
+    env:
+      POSTGRES_USER: opsflow
+      POSTGRES_PASSWORD: opsflow_ci_test_only_password
+      POSTGRES_DB: opsflow_test
+      DATABASE_HOST: localhost
+      DATABASE_PORT: 5432
+      DATABASE_USER: opsflow
+      DATABASE_PASSWORD: opsflow_ci_test_only_password
+      DATABASE_NAME: opsflow_test
+      DATABASE_POOL_MAX: 5
+      DEMO_ADMIN_EMAIL: admin@opsflow.test
+      DEMO_ADMIN_PASSWORD: opsflow-ci-test-admin-password-22
+      ENABLE_DEMO_SEED: "true"
+      COOKIE_SECURE: "false"
+      LOG_LEVEL: silent
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Build API and web
+        run: npm run build
+
+      - name: Apply database migrations
+        run: npm run db:migrate:dev --workspace @opsflow/api
+
+      - name: Load disposable demo fixtures
+        run: npm run db:seed:demo --workspace @opsflow/api
+
+      - name: Run API integration tests
+        run: npm test
+
+      - name: Build API and web container images
+        run: docker compose build api web

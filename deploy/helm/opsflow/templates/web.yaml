@@ -1,0 +1,80 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+  labels:
+    {{- include "opsflow.labels" . | nindent 4 }}
+    app.kubernetes.io/name: web
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "opsflow.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/name: web
+  ports:
+    - name: http
+      port: {{ .Values.web.port }}
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  labels:
+    {{- include "opsflow.labels" . | nindent 4 }}
+    app.kubernetes.io/name: web
+spec:
+  replicas: {{ .Values.web.replicas }}
+  selector:
+    matchLabels:
+      {{- include "opsflow.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/name: web
+  template:
+    metadata:
+      labels:
+        {{- include "opsflow.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/name: web
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: web
+          image: "{{ .Values.images.web.repository }}:{{ .Values.images.web.tag }}"
+          imagePullPolicy: {{ .Values.images.web.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.web.port }}
+          env:
+            - name: DNS_RESOLVER
+              value: {{ .Values.web.dnsResolver | quote }}
+            - name: API_SERVICE_HOST
+              value: "api.{{ .Release.Namespace }}.svc.cluster.local"
+          startupProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 24
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.web.resources | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]

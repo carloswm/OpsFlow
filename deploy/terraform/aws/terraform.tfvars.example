@@ -1,0 +1,8 @@
+aws_region = "us-east-1"
+github_repository      = "OWNER/REPOSITORY"
+github_owner_id        = "00000000"
+github_repository_id   = "00000000"
+
+# Set both immutable tags to an image tag that exists in ECR before applying.
+api_image_tag = "sha-REPLACE_WITH_COMMIT_SHA"
+web_image_tag = "sha-REPLACE_WITH_COMMIT_SHA"

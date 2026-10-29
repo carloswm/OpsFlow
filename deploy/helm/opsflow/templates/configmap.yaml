@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: opsflow-config
+  labels:
+    {{- include "opsflow.labels" . | nindent 4 }}
+data:
+  DATABASE_HOST: db
+  DATABASE_PORT: "5432"
+  HOST: 0.0.0.0
+  PORT: {{ .Values.api.port | quote }}
+  DATABASE_POOL_MAX: {{ .Values.api.poolMax | quote }}
+  COOKIE_SECURE: {{ .Values.api.cookieSecure | quote }}
+  LOG_LEVEL: {{ .Values.api.logLevel | quote }}

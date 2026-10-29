@@ -1,0 +1,56 @@
+images:
+  api:
+    repository: opsflow-api
+    tag: kind-local
+    pullPolicy: IfNotPresent
+  web:
+    repository: opsflow-web
+    tag: kind-local
+    pullPolicy: IfNotPresent
+
+secretName: opsflow-local
+
+api:
+  replicas: 1
+  port: 3000
+  logLevel: info
+  cookieSecure: "false"
+  poolMax: 5
+  resources:
+    requests:
+      cpu: 100m
+      memory: 96Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+
+web:
+  replicas: 1
+  port: 8080
+  dnsResolver: 10.96.0.10
+  resources:
+    requests:
+      cpu: 25m
+      memory: 24Mi
+    limits:
+      cpu: 250m
+      memory: 96Mi
+
+postgres:
+  image: postgres:17-alpine
+  storage: 1Gi
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+migrations:
+  backoffLimit: 3
+
+# Demo data is deliberately opt-in. Enable it only in the local kind values file.
+seed:
+  enabled: false
+  backoffLimit: 1
