@@ -76,8 +76,8 @@ resource "aws_security_group" "load_balancer" {
 
 resource "aws_vpc_security_group_ingress_rule" "load_balancer_http" {
   security_group_id = aws_security_group.load_balancer.id
-  description       = "HTTP demo access; add TLS and restrict source before production use."
-  cidr_ipv4         = "0.0.0.0/0"
+  description       = "HTTP origin access from CloudFront only."
+  prefix_list_id    = data.aws_ec2_managed_prefix_list.cloudfront_origin_facing.id
   from_port         = 80
   to_port           = 80
   ip_protocol       = "tcp"

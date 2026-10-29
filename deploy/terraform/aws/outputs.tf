@@ -1,5 +1,15 @@
 output "application_url" {
-  description = "HTTP URL for the public demo load balancer. TLS requires a domain and certificate before production use."
+  description = "HTTPS URL served with the default CloudFront certificate."
+  value       = "https://${aws_cloudfront_distribution.main.domain_name}"
+}
+
+output "cloudfront_distribution_id" {
+  description = "CloudFront distribution ID for deployment and cache invalidation operations."
+  value       = aws_cloudfront_distribution.main.id
+}
+
+output "alb_origin_url" {
+  description = "Private-by-policy HTTP origin; direct requests are rejected unless they include the CloudFront origin header."
   value       = "http://${aws_lb.main.dns_name}"
 }
 

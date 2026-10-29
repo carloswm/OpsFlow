@@ -86,8 +86,13 @@ resource "aws_lb_listener" "http" {
   protocol          = "HTTP"
 
   default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.web.arn
+    type = "fixed-response"
+
+    fixed_response {
+      content_type = "text/plain"
+      message_body = "Forbidden"
+      status_code  = "403"
+    }
   }
 }
 
@@ -116,7 +121,7 @@ resource "aws_ecs_task_definition" "api" {
       { name = "DATABASE_SSL", value = "true" },
       { name = "NODE_EXTRA_CA_CERTS", value = "/opt/opsflow/certs/rds-us-east-1-bundle.pem" },
       { name = "DATABASE_POOL_MAX", value = "5" },
-      { name = "COOKIE_SECURE", value = "false" },
+      { name = "COOKIE_SECURE", value = "true" },
       { name = "LOG_LEVEL", value = "info" }
     ]
     secrets = [{ name = "DATABASE_PASSWORD", valueFrom = "${aws_db_instance.main.master_user_secret[0].secret_arn}:password::" }]
@@ -230,7 +235,7 @@ resource "aws_ecs_service" "web" {
 
 resource "aws_lb_listener_rule" "api_paths" {
   listener_arn = aws_lb_listener.http.arn
-  priority     = 10
+  priority     = 1
 
   action {
     type             = "forward"
@@ -239,5 +244,29 @@ resource "aws_lb_listener_rule" "api_paths" {
 
   condition {
     path_pattern { values = ["/api/*", "/health/*"] }
+  }
+
+  condition {
+    http_header {
+      http_header_name = "X-OpsFlow-Origin-Verify"
+      values           = [var.origin_verify_header]
+    }
+  }
+}
+
+resource "aws_lb_listener_rule" "web_from_cloudfront" {
+  listener_arn = aws_lb_listener.http.arn
+  priority     = 2
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.web.arn
+  }
+
+  condition {
+    http_header {
+      http_header_name = "X-OpsFlow-Origin-Verify"
+      values           = [var.origin_verify_header]
+    }
   }
 }

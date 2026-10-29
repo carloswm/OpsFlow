@@ -102,3 +102,14 @@ variable "github_repository_id" {
     error_message = "github_repository_id must be the numeric repository ID from GitHub."
   }
 }
+
+variable "origin_verify_header" {
+  description = "Random value shared by CloudFront and the ALB listener to reject requests that bypass the distribution. Keep only in ignored terraform.tfvars and protected Terraform state."
+  type        = string
+  sensitive   = true
+
+  validation {
+    condition     = can(regex("^[A-Za-z0-9_-]{40,}$", var.origin_verify_header))
+    error_message = "origin_verify_header must be at least 40 URL-safe characters."
+  }
+}
